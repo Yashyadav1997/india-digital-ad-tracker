@@ -2,6 +2,8 @@
 
 Who advertises most on Google and Meta in India, in which industries, with which ad formats, and what it costs.
 
+**Live dashboard:** https://yashyadav1997.github.io/india-digital-ad-tracker/
+
 Open [index.html](index.html) in any browser. It is a single file: no server, build step, library or API key. The only outside request is the Figtree font from Google Fonts; offline it falls back to a system font. Instagram Sans is used only if it is already installed.
 
 **Data snapshot: 26 November 2026.** The page does not update itself.
