@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>India Digital Ad Tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Obsidian black, blaze orange, glacier blue. Dark is the default look. */
+:root{color-scheme:dark;--bg:#0b0d10;--surface:#14181d;--text:#f2f6f9;--muted:#a9b6c1;--line:#262d36;--orange:#ff6a13;--glacier:#8cc5e3;--s1:#8cc5e3;--s2:#ff6a13;--s3:#4fb8a0;--s4:#ffc04d;--link:#8cc5e3}
+:root[data-theme=light]{color-scheme:light;--bg:#eef5f9;--surface:#fff;--text:#0b0d10;--muted:#47545f;--line:#d3e2ec;--s1:#2f7ea8;--s2:#d9540a;--s3:#1d8a72;--s4:#a86e00;--link:#1f678d}
+*{box-sizing:border-box}
+/* Instagram Sans is Meta's own font: used only if installed on this computer. Figtree is the free stand-in. */
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Instagram Sans","Figtree",system-ui,-apple-system,"Segoe UI",sans-serif}
+h1{letter-spacing:-.02em}
+h1::after{content:"";display:block;width:72px;height:4px;border-radius:2px;margin-top:6px;background:linear-gradient(90deg,var(--orange),var(--glacier))}
+.bar a,td a{color:inherit;text-decoration:none}.bar a:hover,td a:hover{text-decoration:underline;color:var(--link)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;text-decoration:none;color:var(--text)}
+.chip:hover{border-color:var(--orange)}
+.hero{border-radius:14px;padding:22px;margin-top:14px;background:var(--brand);border-bottom:8px solid var(--brand2);color:var(--ink)}
+.hero h2{font-size:28px;margin:0}.hero a{color:var(--ink)}.hero p{margin:4px 0}
+.branded .card{border-top:3px solid var(--accent)}
+.picks{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.picks select{max-width:100%}
+header,main,nav,.filters{max-width:1180px;margin:0 auto;padding:0 16px}
+header{padding-top:24px}
+h1{margin:0;font-size:26px}h2{font-size:17px;margin:0 0 4px}
+p{margin:6px 0}.muted{color:var(--muted)}
+a{color:var(--link)}
+button,select,input{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+button{cursor:pointer}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+nav button[aria-selected=true]{background:var(--orange);border-color:var(--orange);color:#0b0d10;font-weight:600}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;margin-top:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.wide{grid-column:1/-1}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:14px}
+.kpi b{display:block;font-size:24px}
+.bar{display:grid;grid-template-columns:150px 1fr 88px;gap:8px;align-items:center;margin:3px 0}
+.bar:hover{background:color-mix(in srgb,var(--line) 55%,transparent)}
+.bar span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.track{display:flex;gap:2px;height:14px}
+.fill{height:100%;border-radius:0 4px 4px 0;min-width:2px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 10px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+th{cursor:pointer;color:var(--muted);font-weight:600}
+.note{border-left:3px solid var(--s4);padding:6px 10px;margin:10px 0;color:var(--muted)}
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}
+.calc label{display:block;color:var(--muted)}.calc input{width:100%}
+footer{max-width:1180px;margin:24px auto;padding:0 16px;color:var(--muted)}
+@media (max-width:480px){.grid{grid-template-columns:1fr}.bar{grid-template-columns:100px 1fr 70px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>India Digital Ad Tracker</h1>
+  <p class="muted">Who advertises most on Google and Meta in India, in which industries, with which ad types, and what it costs. <span id="stamp"></span></p>
+  <button id="theme">Light / dark</button>
+  <button id="csv">Download CSV</button>
+  <label><button id="importBtn" type="button">Load newer data</button><input id="import" type="file" accept=".json,.csv,.txt" multiple hidden></label>
+</header>
+<nav id="tabs" role="tablist"></nav>
+<div class="filters">
+  <select id="industry" aria-label="Industry"></select>
+  <input id="q" placeholder="Search company" aria-label="Search company">
+  <span class="muted" id="count"></span>
+</div>
+<main id="view"></main>
+<footer>Independent analysis of public data. Not affiliated with Google, Meta or any company named. Figures are as published or reported by the linked sources and have not been audited.</footer>
+
+<script>
+// ===== DATA SNAPSHOT 2026-11-26 =====
+(function () {
+  // Google Ads Transparency Center, India, by destination website: earlier format pass.
+  // domain: [old total (unused), text, image, video, last 30 days]. null = not captured, which is not zero.
+  // Current totals are in ROWS below.
+  const _ = null;
+  const google = {
+    'flipkart.com':[30000,3000,20000,20000,7000],'amazon.in':[800000,700000,30000,60000,700000],'meesho.com':[5000],'myntra.com':[20000,7000],
+    'ajio.com':[9000,_,3000,4000,9000],'nykaa.com':[20000,4000,6000,9000,7000],'mamaearth.in':[800],'sugarcosmetics.com':[200,84,84,22],
+    'boat-lifestyle.com':[2000,_,_,_,2000],'lenskart.com':[2000],'caratlane.com':[800,700,67],'tanishq.co.in':[20000,_,_,20000,20000],
+    'zomato.com':[900],'swiggy.com':[5000,500],'blinkit.com':[20000,_,4000,8000,3000],'zeptonow.com':[1],'bigbasket.com':[800,200],
+    'groww.in':[700,67],'zerodha.com':[3,_,0,2],'angelone.in':[2000,_,_,_,2000],'upstox.com':[600],'paytm.com':[30000],'phonepe.com':[200,62],
+    'cred.club':[33,_,_,26],'policybazaar.com':[8000,_,_,2000,5000],'bajajfinserv.in':[7000,_,_,_,2000],'pw.live':[8000,2000,_,3000],
+    'unacademy.com':[2000,_,_,_,700],'upgrad.com':[3000],'simplilearn.com':[600,500,52],'makemytrip.com':[200000,_,_,800,200000],
+    'goibibo.com':[60000],'ixigo.com':[1000,900,95],'cleartrip.com':[40000,_,_,2000,40000],'oyorooms.com':[3000],'marutisuzuki.com':[20000,20000],
+    'tatamotors.com':[20000,4000,4000,4000],'auto.mahindra.com':[0,_,_,_,0],'hyundai.com':[2000],'jio.com':[26],'airtel.in':[10000,_,_,4000],
+    'myvi.in':[2000,_,2000,400,2000],'nobroker.in':[20000],'magicbricks.com':[60000,_,50000,_,60000],'99acres.com':[30000],
+    'naukri.com':[2000,_,_,_,2000],'apna.co':[600,_,_,68],'1mg.com':[3000,2000,400,600],'pharmeasy.in':[600,_,_,_,300],
+    'apollo247.com':[200],'urbancompany.com':[2000,300,300],'pepperfry.com':[3000,_,800,600,3000]
+  };
+
+  // name | domain | industry | active Meta ads in India (blank = not captured) | Meta page id | Google ads, low end | Google ads, high end | note
+  const ROWS = `Flipkart|flipkart.com|E-commerce|9615|102988293558|20000|30000
+Amazon India|amazon.in|E-commerce|401|100281786832302|700000|800000
+Meesho|meesho.com|E-commerce|5720|269617286730030|4000|5000
+JioMart|jiomart.com|E-commerce|||1000|2000
+Tata CLiQ|tatacliq.com|E-commerce|80|135913003544880|3000|4000|Meta: Luxury page only
+Snapdeal|snapdeal.com|E-commerce|12|471784335392|1000|2000
+FirstCry|firstcry.com|E-commerce|252|103916143007346|30000|40000
+IndiaMART|indiamart.com|E-commerce|2310|120453355026|20000|30000
+Udaan|udaan.com|E-commerce|||0|0
+Shopsy|shopsy.in|E-commerce|||600|700
+Myntra|myntra.com|Fashion|1883|6466648220|10000|20000
+AJIO|ajio.com|Fashion|295|954237537992325|8000|9000
+Bewakoof|bewakoof.com|Fashion|591|106503252725893|500|600
+The Souled Store|thesouledstore.com|Fashion|280|391476257640230|3000|4000
+Snitch|snitch.com|Fashion|641|236672023872356|300|400
+Newme|newme.asia|Fashion|788|101097855974731|100|200
+Libas|libas.in|Fashion|142|220606224802634|700|800
+Fabindia|fabindia.com|Fashion|211|107238907460|3000|4000
+Westside|westside.com|Fashion|66|109777759066882|100|200
+Max Fashion|maxfashion.in|Fashion|||1000|2000
+Pantaloons|pantaloons.com|Fashion|825|102287061026|900|1000
+Savana|savana.com|Fashion|||400|500
+Nykaa|nykaa.com|Beauty & Personal Care|3963||10000|20000
+Mamaearth|mamaearth.in|Beauty & Personal Care|902|619181354927737|700|800
+SUGAR Cosmetics|sugarcosmetics.com|Beauty & Personal Care|490|100116710332265|100|200
+Purplle|purplle.com|Beauty & Personal Care|3538|275468419167761|6000|7000
+Minimalist|beminimalist.co|Beauty & Personal Care|312|107597820995682|300|400
+Dot & Key|dotandkey.com|Beauty & Personal Care|425|1806087489455976|2000|3000
+Plum|plumgoodness.com|Beauty & Personal Care|263|511641355600533|400|500
+mCaffeine|mcaffeine.com|Beauty & Personal Care|||500|600
+Foxtale|foxtale.in|Beauty & Personal Care|788|110186374689636|6000|7000
+Bella Vita|bellavitaorganic.com|Beauty & Personal Care|456|602071616470800|400|500
+WOW Skin Science|buywow.in|Beauty & Personal Care|145|168125940677887|54|54
+The Derma Co|thedermaco.com|Beauty & Personal Care|828|107783513956553|900|1000
+Traya|traya.health|Beauty & Personal Care|518|1067448693440461|400|500
+boAt|boat-lifestyle.com|Electronics|40|786827864757998|1000|2000
+Noise|gonoise.com|Electronics|658|1511495619138631|1000|2000
+Fire-Boltt|fireboltt.com|Electronics|||12|12
+Boult|boultaudio.com|Electronics|479|1347534145316390|0|0|Google: none found for the website
+Samsung|samsung.com|Electronics|72|133803174373|10000|20000|Google: global website, India region
+Xiaomi|mi.com|Electronics|||1000|2000|Google: global website, India region
+OnePlus|oneplus.in|Electronics|||200|300
+vivo|vivo.com|Electronics|61|296173570575105|1000|2000|Google: global website, India region
+OPPO|oppo.com|Electronics|216|1409279892653152|700|800|Google: global website, India region
+realme|realme.com|Electronics|||1000|2000|Google: global website, India region
+Croma|croma.com|Electronics|446|96856132013|2000|3000
+Reliance Digital|reliancedigital.in|Electronics|21|123437217685421|900|1000
+Lenskart|lenskart.com|Eyewear & Jewellery|||1000|2000
+CaratLane|caratlane.com|Eyewear & Jewellery|13|77179773544|700|800
+Tanishq|tanishq.co.in|Eyewear & Jewellery|293|124839200878152|10000|20000
+Kalyan Jewellers|kalyanjewellers.net|Eyewear & Jewellery|25|120789801345974|300|400
+Malabar Gold|malabargoldanddiamonds.com|Eyewear & Jewellery|544|122298767852952|7000|8000
+Joyalukkas|joyalukkas.in|Eyewear & Jewellery|9|208006332548372|700|800
+Senco Gold|sencogoldanddiamonds.com|Eyewear & Jewellery|349|136328546542037|1000|2000
+BlueStone|bluestone.com|Eyewear & Jewellery|74|158294897592584|33|33
+GIVA|giva.co|Eyewear & Jewellery|335|350941852220221|1000|2000
+Melorra|melorra.com|Eyewear & Jewellery|104|197243710624430|900|1000
+PC Jeweller|pcjeweller.com|Eyewear & Jewellery|171|13350483490|80|80
+Titan Eye+|titaneyeplus.com|Eyewear & Jewellery|75|100013896078|1000|2000
+Zomato|zomato.com|Food & Quick Commerce|465|170229159669841|800|900
+Swiggy|swiggy.com|Food & Quick Commerce|1800|313788932116395|4000|5000
+Blinkit|blinkit.com|Food & Quick Commerce|||10000|20000
+Zepto|zeptonow.com|Food & Quick Commerce|8|111137961232112|1|1|Google: may now use another website
+BigBasket|bigbasket.com|Food & Quick Commerce|431|139311472851666|700|800
+Domino's|dominos.co.in|Food & Quick Commerce|||200|300
+McDonald's|mcdelivery.co.in|Food & Quick Commerce|59|109393465767252|100|200|Delivery website
+KFC|kfc.co.in|Food & Quick Commerce|||200|300
+EatSure|eatsure.com|Food & Quick Commerce|1118|110730337304534|8|8
+Licious|licious.in|Food & Quick Commerce|314|968109179907978|200|300
+Country Delight|countrydelight.in|Food & Quick Commerce|980|790178521143485|23|23
+magicpin|magicpin.in|Food & Quick Commerce|37|1462912544023547|8|8
+FreshToHome|freshtohome.com|Food & Quick Commerce|2|433583616659807|30|30
+Groww|groww.in|Fintech|256|1494802560841604|600|700
+Zerodha|zerodha.com|Fintech|||3|3
+Angel One|angelone.in|Fintech|64|230698941006|1000|2000
+Upstox|upstox.com|Fintech|126|1538270316396743|500|600
+Paytm|paytm.com|Fintech|136|137725316293048|20000|30000
+PhonePe|phonepe.com|Fintech|298|1015973098467408|100|200
+CRED|cred.club|Fintech|429|435049543697636|33|33
+Navi|navi.com|Fintech|265|110076520687362|33|33
+MobiKwik|mobikwik.com|Fintech|120|125734529452|11|11
+Razorpay|razorpay.com|Fintech|295|384638338316241|1000|2000
+Dhan|dhan.co|Fintech|375|111778237817974|500|600
+ICICI Direct|icicidirect.com|Fintech|15|136605073107775|500|600
+Kotak Securities|kotaksecurities.com|Fintech|749|188182312710|69|69|Meta: Kotak Neo page
+INDmoney|indmoney.com|Fintech|398|315989229198579|13|13
+Policybazaar|policybazaar.com|Insurance & Lending|330|121863964566067|7000|8000
+Bajaj Finserv|bajajfinserv.in|Insurance & Lending|1098|139731946049246|6000|7000
+Acko|acko.com|Insurance & Lending|365|698479763654869|8000|9000
+Digit Insurance|godigit.com|Insurance & Lending|||300|400
+HDFC Life|hdfclife.com|Insurance & Lending|978|184615211565922|2000|3000
+LIC|licindia.in|Insurance & Lending|14|164814490207463|300|400
+ICICI Prudential Life|iciciprulife.com|Insurance & Lending|462|472937792800629|1000|2000
+SBI Life|sbilife.co.in|Insurance & Lending|164|149178901793925|1000|2000
+Star Health|starhealth.in|Insurance & Lending|224|235977406568248|2000|3000
+Tata AIA Life|tataaia.com|Insurance & Lending|139|350457298466486|3000|4000
+KreditBee|kreditbee.in|Insurance & Lending|109|1782465895149044|300|400
+Moneyview|moneyview.in|Insurance & Lending|130|401419066673564|200|300
+Fibe|fibe.in|Insurance & Lending|45|1024070820978879|33|33
+Physics Wallah|pw.live|Edtech|||7000|8000
+Unacademy|unacademy.com|Edtech|49|149047741818614|1000|2000
+upGrad|upgrad.com|Edtech|484|973567756011049|2000|3000
+Simplilearn|simplilearn.com|Edtech|||500|600
+BYJU'S|byjus.com|Edtech|109|333533779624|2|2
+Vedantu|vedantu.com|Edtech|127|314164661966140|3000|4000
+Great Learning|mygreatlearning.com|Edtech|353|116490805349270|1000|2000
+Scaler|scaler.com|Edtech|65|100171994759155|5000|6000
+Testbook|testbook.com|Edtech|49|553392257864846|1000|2000|Meta: sub-brand page
+Adda247|adda247.com|Edtech|68|1497732473867060|2000|3000
+Allen|allen.in|Edtech|1|100104235805762|2000|3000|Meta: ALLEN Digital page only
+Aakash|aakash.ac.in|Edtech|3|196735913699539|2000|3000
+MakeMyTrip|makemytrip.com|Travel|946|120740541030|100000|200000
+Goibibo|goibibo.com|Travel|674|239522418693|50000|60000
+ixigo|ixigo.com|Travel|187|17705588269|900|1000
+Cleartrip|cleartrip.com|Travel|822|109495541152|30000|40000
+OYO|oyorooms.com|Travel|40|1449392448629708|2000|3000
+Yatra|yatra.com|Travel|84|159215287696|800|900
+EaseMyTrip|easemytrip.com|Travel|158|185249174857504|9000|10000
+redBus|redbus.in|Travel|||30000|40000
+IndiGo|goindigo.in|Travel|62|133214133452242|4000|5000
+Air India|airindia.com|Travel|18|251462618328947|2000|3000
+Agoda|agoda.com|Travel|196|159632516873|100000|200000|Global website and page, India filter
+Booking.com|booking.com|Travel|57|131840030178250|200000|300000|Global website and page, India filter
+Maruti Suzuki|marutisuzuki.com|Automobile|199|104114314473012|10000|20000
+Tata Motors|tatamotors.com|Automobile|||10000|20000
+Mahindra|mahindra.com|Automobile|||1000|2000|Google: group website
+Hyundai India|hyundai.com|Automobile|216|179374318807001|1000|2000|Google: global website, India region
+Toyota|toyotabharat.com|Automobile|307|149086491791200|600|700
+Kia|kia.com|Automobile|150|123824874971595|1000|2000|Google: global website, India region
+Honda Cars|hondacarindia.com|Automobile|101|144008698954478|300|400
+MG Motor|mgmotor.co.in|Automobile|31|364103537320321|7000|8000
+Hero MotoCorp|heromotocorp.com|Automobile|65|113069422123883|700|800
+TVS Motor|tvsmotor.com|Automobile|171|122436864499465|8000|9000
+Bajaj Auto|bajajauto.com|Automobile|||300|400
+Royal Enfield|royalenfield.com|Automobile|132|130157783693645|4000|5000
+Ola Electric|olaelectric.com|Automobile|95|104817894981469|100|200
+Ather Energy|atherenergy.com|Automobile|72|334474140024175|8000|9000
+Jio|jio.com|Telecom|||26|26
+Airtel|airtel.in|Telecom|393|147351511955143|9000|10000
+Vi|myvi.in|Telecom|54|110990320705911|1000|2000
+BSNL|bsnl.co.in|Telecom|||0|0
+ACT Fibernet|actcorp.in|Telecom|516|457579277662602|2000|3000
+Excitel|excitel.com|Telecom|||2000|3000
+Hathway|hathway.com|Telecom|||38|38
+NoBroker|nobroker.in|Real Estate|636|794951570520699|10000|20000
+MagicBricks|magicbricks.com|Real Estate|188|150525327028|50000|60000
+99acres|99acres.com|Real Estate|401|375428829659|20000|30000
+Housing.com|housing.com|Real Estate|646|445540912141491|5000|6000
+Square Yards|squareyards.com|Real Estate|1|156785401182262|600|700
+DLF|dlf.in|Real Estate|||100|200
+Lodha|lodhagroup.com|Real Estate|27|134463960016251|2000|3000
+Godrej Properties|godrejproperties.com|Real Estate|33|251514708209239|3000|4000
+Prestige Group|prestigeconstructions.com|Real Estate|79|126303260722225|2000|3000
+Sobha|sobha.com|Real Estate|31|370596513019404|1000|2000
+Brigade Group|brigadegroup.com|Real Estate|79|382990208485386|300|400
+Oberoi Realty|oberoirealty.com|Real Estate|128|165392243602902|100|200
+Naukri|naukri.com|Jobs|200|143609916516|1000|2000
+Apna|apna.co|Jobs|238|2386268451700180|500|600
+foundit|foundit.in|Jobs|16|173697385974820|400|500
+Shine|shine.com|Jobs|11|87369453667|1000|2000
+Internshala|internshala.com|Jobs|15|116887325050240|69|69
+Instahyre|instahyre.com|Jobs|2|208406906035761|6|6
+WorkIndia|workindia.in|Jobs|112|653854241415555|500|600
+Indeed|indeed.com|Jobs|1|5944538380|700|800|Global website and page, India filter
+Job Hai|jobhai.com|Jobs|24|108763967183130|200|300
+Cutshort|cutshort.io|Jobs|||0|0
+Tata 1mg|1mg.com|Health|58|340191546053154|2000|3000
+PharmEasy|pharmeasy.in|Health|116|1549611245304477|500|600
+Apollo 247|apollo247.com|Health|10|111507530347389|100|200
+Netmeds|netmeds.com|Health|13|1377137405907327|1000|2000
+Practo|practo.com|Health|122|148036128552770|2000|3000
+HealthKart|healthkart.com|Health|610|170199059695029|28|28
+Dr Lal PathLabs|lalpathlabs.com|Health|78|202321223267432|3000|4000
+Metropolis|metropolisindia.com|Health|9|579183945492866|700|800
+Thyrocare|thyrocare.com|Health|46|114327285274942|200|300
+Apollo Hospitals|apollohospitals.com|Health|31|116772528383864|3000|4000
+Max Healthcare|maxhealthcare.in|Health|68|93226131833|3000|4000
+Truemeds|truemeds.in|Health|364|1052380458294417|1000|2000
+cult.fit|cult.fit|Health|1196|392046674300717|700|800
+Urban Company|urbancompany.com|Home & Services|523|324693397702420|1000|2000
+Pepperfry|pepperfry.com|Home & Services|132|111599995603231|2000|3000
+Wakefit|wakefit.co|Home & Services|444|1414949458807946|2000|3000
+Livspace|livspace.com|Home & Services|835|211671668956540|3000|4000
+HomeLane|homelane.com|Home & Services|217|1433650480216500|2000|3000
+Urban Ladder|urbanladder.com|Home & Services|336|364929056850851|1000|2000
+The Sleep Company|thesleepcompany.in|Home & Services|694|324603558250502|2000|3000
+Wooden Street|woodenstreet.com|Home & Services|87|1561206460802434|900|1000
+IKEA|ikea.com|Home & Services|||3000|4000|Google: global website, India region
+Asian Paints|asianpaints.com|Home & Services|395|123397461095072|2000|3000
+Snabbit|snabbit.com|Home & Services|||100|200`;
+
+  const companies = ROWS.split('\n').map(line => {
+    const [name, domain, industry, meta, metaPageId, low, high, note] = line.split('|');
+    const g = {};
+    // A website lookup that found no ads is "not found", not a confirmed zero.
+    if (Number(high) > 0) { g.total = Number(high); g.low = Number(low); }
+    // Format and 30-day counts exist only for part of the first 53 companies.
+    ['text','image','video','last30'].forEach((k, i) => { const v = (google[domain] || [])[i + 1]; if (v != null) g[k] = v; });
+    return { name, domain, industry, meta: meta ? Number(meta) : null, metaPageId: metaPageId || '', note: note || '', g };
+  });
+
+  const e4m = 'https://www.exchange4media.com/';
+  const s18 = 'https://www.storyboard18.com/';
+  const eternal = 'https://indiantelevision.com/mam/eternal-posts-rs-54364-crore-revenue-up-168-per-cent-in-fy26/';
+  const swiggy = s18 + 'advertising/swiggy-boosts-ad-spend-55-revenue-up-51-losses-widen-swiggy-ad-spend-revenue-losses-ws-l-105423.htm';
+  const bb = 'https://inc42.com/buzz/bigbasket-fy25-loss-crosses-inr-2000-cr-revenue-dips/';
+  // spend, previous-year spend, revenue are in ₹ crore.
+  const fin = (company, domain, fy, spend, prevSpend, revenue, src, note) => ({ company, domain, fy, spend, prevSpend, revenue, src, note });
+  const finance = [
+    fin('Flipkart Internet', 'flipkart.com', 'FY25', 1586.4, 1119.7, 20493, 'https://inc42.com/buzz/flipkarts-b2c-arm-crosses-inr-20000-cr-revenue-mark-in-fy25/', 'Marketplace entity only'),
+    fin('Myntra', 'myntra.com', 'FY25', 2105.3, 1677.4, 6042.7, 'https://www.socialsamosa.com/industry-updates/myntra-fy25-ad-spend-rises-25-ad-income-climbs-28-10465833', ''),
+    fin('Meesho', 'meesho.com', 'FY25', 643.5, 459.4, 9390, 'https://www.indmoney.com/blog/ipo/meesho-losses-revenue-growth-explained', ''),
+    fin('Nykaa', 'nykaa.com', 'FY25', 958, 720, 7950, e4m + 'marketing-news/nykaas-ad-expenses-rise-33-to-rs-958-cr-in-fy25-143965.html', 'Another report gives 994.8'),
+    fin('Honasa (Mamaearth)', 'mamaearth.in', 'FY25', 743.4, 661.3, 2066.9, e4m + 'marketing-news/mamaearth-parent-co-ups-ad-spends-by-12-profit-slips-34-in-fy25-147015.html', ''),
+    fin('Lenskart', 'lenskart.com', 'FY25', 484.4, 352.1, 6652.5, 'https://inc42.com/buzz/ipo-bound-lenskart-in-the-black-posts-inr-297-cr-profit-in-fy25/', 'Another report gives 448.4'),
+    fin('Eternal (Zomato)', 'zomato.com', 'FY25', 1972, 1432, 20243, eternal, 'Group figure, includes Blinkit'),
+    fin('Eternal (Zomato)', 'zomato.com', 'FY26', 3350, 1972, 54364, eternal, 'Group figure; revenue jump partly reflects a Blinkit accounting change'),
+    fin('Swiggy', 'swiggy.com', 'FY25', 2712, null, 15227, swiggy, ''),
+    fin('Swiggy', 'swiggy.com', 'FY26', 4207, 2712, 23053, swiggy, ''),
+    fin('Blinkit', 'blinkit.com', 'FY25', 502, 191, 4389, e4m + 'digital-news/blinkit-lifts-ad-spend-163-to-rs-502-crore-in-fy25-147562.html', 'Total income; already inside Eternal'),
+    fin('BigBasket', 'bigbasket.com', 'FY25', 496.8, 330, null, bb, 'Revenue not captured'),
+    fin('Physics Wallah', 'pw.live', 'FY25', 276.2, null, 2886.6, s18 + 'advertising/physicswallah-ramps-up-ad-spend-to-rs-276-crore-in-fy25-earmarks-rs-710-crore-for-promotions-from-ipo-80479.htm', ''),
+    fin('Paytm', 'paytm.com', 'FY25', 659.4, null, 6900.4, s18 + 'brand-marketing/paytm-slashes-marketing-and-promo-expenses-to-rs-659-crore-in-fy25-78391.htm', 'Marketing and promotion'),
+    fin('Groww', 'groww.in', 'FY25', 487.5, null, 3901.7, s18 + 'brand-marketing/ipo-bound-groww-allocates-rs-225-crore-for-brand-building-rs-205-crore-on-subsidiaries-81220.htm', 'Brand-building spend'),
+    fin('Info Edge (Naukri)', 'naukri.com', 'FY25', 312.5, null, 2654, 'https://www.infoedge.in/pdfs/Report_filings/InfoEdge_Annual_Report_2025.pdf', 'Standalone; revenue figure via Wikipedia'),
+    fin('Maruti Suzuki', 'marutisuzuki.com', 'FY25', 1127.5, 1040.9, null, 'https://www.socialsamosa.com/industry-updates/maruti-suzuki-scales-up-marketing-investment-9632078', 'Advertising only, excludes sales promotion; revenue not captured'),
+    fin('Urban Company', 'urbancompany.com', 'FY25', 207, 207, 1144, 'https://entrackr.com/fintrackr/urban-company-posts-rs-1144-cr-revenue-and-rs-285-cr-pbt-in-fy25-9373371', 'Advertising and business promotion'),
+    fin('Imagine Marketing (boAt)', 'boat-lifestyle.com', 'FY25', 389.7, 365.7, 3097.8, 'https://bestmediainfo.com/mediainfo/mediainfo-marketing/boats-ipo-plan-rs-150-crore-for-marketing-as-brand-takes-centre-stage-10606160', 'Revenue from a separate press report'),
+    fin('Wakefit', 'wakefit.co', 'FY25', 96.3, 77.4, 1273.7, 'https://www.indiainfoline.com/company/wakefit-innovations-ltd/management-discussions', 'Advertisement and business promotion, from the offer document'),
+    fin('BlueStone', 'bluestone.com', 'FY25', 159, 124.2, 1770, 'https://entrackr.com/fintrackr/bluestones-losses-surge-56-in-fy25-online-sales-make-up-just-7-9632418', '')
+  ];
+
+  const ibef = 'https://www.ibef.org/news/e-commerce-platforms-see-advertising-revenues-cross-rs-15-000-crore-us-1-7-billion-in-fy25';
+
+  window.ADS_DATA = {
+    meta: {
+      snapshot: '2026-11-26',
+      method: [
+        'Meta: number of ads active in India per brand page, read from the Meta Ad Library through the Adyntel data service (Firecrawl Alexandria). The page was matched from the website, or from the Facebook page address where that failed. A lookup that returned no ads is shown as n/a, not zero, because the matched page could not be confirmed.',
+        'Google: ad counts for India from the Ads Transparency Center, by destination website, across all dates the Center holds, read through the same service. Large counts come as a range; charts and rankings use the upper end and the table shows the range.',
+        'Google formats and last 30 days: an earlier pass over the first 53 companies in the Center itself. Only partly captured because Google rate-limited collection. Formats are counted separately, so their sum may not equal the total.',
+        'Meta creative mix: tags counted in the sample of ads returned for the brands above. One ad with several cards can carry several tags.',
+        'Political ads: Google Ads Transparency Center insights for India. Advertiser amounts are share of spend times total spend.',
+        'Finances: press reports of company filings, and one annual report. Not re-read from the filings.',
+        'Activity index: average percentile rank on Google total ads and Meta active ads, only for companies with both.'
+      ],
+      limits: [
+        'The companies are a hand-picked sample, not a verified ranking of the top advertisers or top startups in each industry. FMCG companies, usually among the biggest advertisers, are missing from the rankings; a partial account-and-brand-page view is shown separately in the Industries tab.',
+        'Some companies use a global website or page, a group website or a sub-brand page. The Note column in the Companies tab marks the known cases.',
+        'Ad count is not ad spend. One brand may run thousands of small product ads; another a few very expensive ones.',
+        'n/a on Google means no ads were found for that website. Very small counts (such as Zepto with 1) usually mean the company\'s ads point somewhere else, such as an app store or another domain.',
+        'Google and Meta counts measure different things (all dates against active now) and must not be added together.',
+        'A website count on Google includes resellers and affiliates that link to that website.',
+        'Few companies have all three Google formats. Format and 30-day counts came from an earlier pass than the totals, and a few look inconsistent (MakeMyTrip: 800 video against a total near 2,00,000). Check them live before quoting.',
+        'Industries have different numbers of companies and different gaps, so compare the typical (median) company as well as the sum.',
+        'A brand with several Meta pages is undercounted, because only one page is read.',
+        'No source publishes revenue generated by a company\'s ads.',
+        'Ad cost is all advertising and promotion, including TV, print and outdoor, not digital alone.'
+      ]
+    },
+    companies,
+    finance,
+    // Counted by Google advertiser account and one Meta brand page, so kept out of the rankings.
+    // google/account: advertiser account. page/meta/pageId: the Meta page looked up. null = nothing found, not zero.
+    fmcg: [
+      { company: 'Hindustan Unilever', google: null, account: null, page: 'Surf Excel', meta: null, pageId: null },
+      { company: 'Reckitt', google: null, account: null, page: 'Dettol India', meta: 1282, pageId: '308723279160232' },
+      { company: 'Godrej Consumer', google: null, account: null, page: 'Cinthol', meta: null, pageId: null },
+      { company: 'Mondelez', google: null, account: null, page: 'Cadbury Dairy Milk', meta: null, pageId: null },
+      { company: 'Procter & Gamble', google: null, account: null, page: 'Gillette India', meta: 147, pageId: '171862669494979' },
+      { company: 'ITC', google: null, account: null, page: 'Sunfeast Dark Fantasy', meta: null, pageId: null },
+      { company: 'Nestle India', google: '600–700', account: 'AR06458481428395982849', page: 'Maggi', meta: null, pageId: null },
+      { company: 'Britannia', google: null, account: null, page: 'Britannia Good Day', meta: 683, pageId: '1393769554196645' },
+      { company: 'Dabur India', google: '200–300', account: 'AR17735995370690838529', page: 'Dabur India', meta: null, pageId: null },
+      { company: 'Marico', google: '600–700', account: 'AR11927711732518092801', page: 'Saffolalife', meta: 157, pageId: '119834398070433' },
+      { company: 'Colgate-Palmolive India', google: '8', account: 'AR08926868402639732737', page: 'Colgate India', meta: 559, pageId: '396877257002276' },
+      { company: 'Amul', google: null, account: null, page: 'Amul', meta: 12, pageId: '85014209445' },
+      { company: 'Coca-Cola India', google: '500–600', account: 'AR06100384372563640321', page: 'Coca-Cola (India page)', meta: 7, pageId: '765898450131958' },
+      { company: 'PepsiCo', google: null, account: null, page: 'Pepsi India', meta: null, pageId: null }
+    ],
+    platforms: [
+      { name: 'Google India', value: 34742, note: 'Gross ad revenue FY25, from registry filings as reported. Net revenue kept by Google India was far smaller. No Meta India figure is shown because none could be verified.', src: 'https://bestmediainfo.com/mediainfo/mediainfo-digital/google-indias-fy25-gross-ad-revenue-up-113-to-rs-34742-cr-net-ad-revenue-slips-2-11056935' }
+    ],
+    retailMedia: [
+      { name: 'Amazon India', value: 8342, note: 'Ad income FY25.', src: ibef },
+      { name: 'Flipkart', value: 6316.5, note: 'Derived: 15,573 combined total minus Amazon and Myntra.', src: ibef },
+      { name: 'Myntra', value: 914.5, note: 'Ad income FY25.', src: ibef },
+      { name: 'Zepto', value: 651.2, note: 'Ad revenue FY25, from a blog citing the draft prospectus.', src: 'https://blooprint.in/blog/quick-commerce-ads-guide/' },
+      { name: 'BigBasket', value: 203.5, note: 'Ad revenue FY25.', src: bb }
+    ],
+    market: {
+      year: '2025', total: 121339, digital: 71621,
+      formats: [{ label: 'Social media', value: 29 }, { label: 'Online video', value: 28 }, { label: 'Paid search', value: 23 }, { label: 'Display', value: 16 }, { label: 'Other (remainder)', value: 4 }]
+    },
+    metaCreative: {
+      note: 'Count of format tags in the ads sampled (925 tags). Shows how large brands build ads, not spend.',
+      formats: [{ label: 'Dynamic creative', value: 369 }, { label: 'Video', value: 243 }, { label: 'Product catalogue', value: 172 }, { label: 'Image', value: 129 }, { label: 'Carousel', value: 12 }],
+      ctas: [{ label: 'Shop now', value: 1003 }, { label: 'Book, order, contact', value: 758 }, { label: 'Install app', value: 485 }, { label: 'Learn more', value: 407 }, { label: 'Other', value: 261 }, { label: 'Download', value: 137 }, { label: 'Sign up or apply', value: 76 }]
+    },
+    political: {
+      totalCr: 949.7, ads: 404310,
+      // format, share of spend, share of ad count
+      formats: [['Video', 0.8197, 0.2581], ['Image', 0.1680, 0.7379], ['Text', 0.0123, 0.0039]],
+      // advertiser, share of spend
+      top: [
+        ['Bharatiya Janata Party', 0.2589], ['Central Bureau of Communication (earlier DAVP)', 0.1282], ['Indian National Congress', 0.0901],
+        ['Populus Empowerment Network', 0.0577], ['Indian PAC Consulting', 0.0378], ['Way2News', 0.0260], ['Dravida Munnetra Kazhagam', 0.0227],
+        ['Biju Janata Dal', 0.0224], ['ZEE Entertainment Enterprise', 0.0179], ['Central Bureau of Communication', 0.0169], ['D B Corp', 0.0169],
+        ['Directorate of Advertising and Visual Publicity', 0.0141], ['YSR Congress Party', 0.0134], ['Bharat Rashtra Samithi', 0.0128],
+        ['T.V. Today Network', 0.0126], ['Gibbous Films', 0.0093], ['I&CA Department, West Bengal', 0.0092], ['Andhra Pradesh Digital Corporation', 0.0083],
+        ['PrimeTrace Technologies', 0.0077], ['AIADMK', 0.0077], ['Public Relations, Madhya Pradesh', 0.0076], ['Angel One', 0.0072],
+        ['Telugu Desam Party', 0.0068], ['Spangle PR & Media', 0.0066], ['Information Directorate, Gujarat', 0.0059]
+      ]
+    },
+    sources: [
+      ['Google Ads Transparency Center, India', 'https://adstransparency.google.com/?region=IN'],
+      ['Google political advertising in India', 'https://adstransparency.google.com/political?region=IN'],
+      ['Meta Ad Library', 'https://www.facebook.com/ads/library/?country=IN'],
+      ['dentsu-e4m Digital Advertising Report 2026', 'https://www.dentsu.com/in/en/reports/dentsu_e4m_digital_advertising_2026'],
+      ['Retail media ad income (IBEF)', ibef]
+    ].concat(finance.map(f => [`${f.company} ${f.fy}`, f.src]))
+  };
+})();
+</script>
+<script>
+let D = window.ADS_DATA;
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const url = u => /^https:\/\//.test(u || '') ? esc(u) : '#';
+const has = v => v !== null && v !== undefined;
+const fmt = v => has(v) ? Number(v).toLocaleString('en-IN', {maximumFractionDigits: 1}) : 'n/a';
+const cr = v => has(v) ? '₹' + fmt(v) + ' cr' : 'n/a';
+const pct = v => has(v) ? (v * 100).toFixed(1) + '%' : 'n/a';
+const sum = a => a.reduce((x, y) => x + (y || 0), 0);
+const TABS = ['Overview','Companies','Industries','Compare','Instagram & funnel','Ad types','Cost & revenue','Political ads','ROAS lab','Method & sources'];
+// tab is one of TABS, or 'company/<domain>', or 'industry/<name>'.
+const readHash = () => { let h = ''; try { h = decodeURIComponent(location.hash.slice(1)); } catch (e) {} return TABS.includes(h) || /^(company|industry)\//.test(h) ? h : 'Overview'; };
+let tab = readHash();
+// The Instagram view appears only once sample data is loaded.
+const shownTabs = () => TABS.filter(t => t !== 'Instagram & funnel' || Object.keys(SAMPLES).length);
+let sortKey = 'index', sortDir = -1;
+
+function enrich() {
+  // Activity index: mean percentile rank across the platforms that have a value.
+  const rank = (list, v) => list.filter(x => x <= v).length / list.length;
+  const gl = D.companies.map(c => c.g.total).filter(has), ml = D.companies.map(c => c.meta).filter(has);
+  D.companies.forEach(c => {
+    const parts = [];
+    if (has(c.g.total)) parts.push(rank(gl, c.g.total));
+    if (has(c.meta)) parts.push(rank(ml, c.meta));
+    c.platforms = parts.length;
+    c.index = parts.length === 2 ? Math.round(sum(parts) / 2 * 100) : null;
+  });
+}
+const rows = () => D.companies.filter(c =>
+  (!$('#industry').value || c.industry === $('#industry').value) &&
+  c.name.toLowerCase().includes($('#q').value.trim().toLowerCase()));
+
+// ----- Brand themes: approximate colours picked by hand, not official brand assets. -----
+const BRAND = Object.fromEntries(`flipkart.com 2874f0 ffe11b|amazon.in 232f3e ff9900|meesho.com 9f2089 f43397|jiomart.com 008ecc e42529|snapdeal.com e40046 8b0030|firstcry.com ff7043 4fa5d8|indiamart.com 2e3192 00a699|
+myntra.com ff3f6c ff905a|ajio.com 2c4152 b19975|thesouledstore.com e11b23 231f20|snitch.com 111111 555555|fabindia.com 8a1e22 c9a46a|westside.com 111111 6b6b6b|pantaloons.com 007b7a 00b2a9|
+nykaa.com fc2779 80002f|mamaearth.in 00a1d6 8bc53f|sugarcosmetics.com 111111 e5006d|purplle.com 8800a9 e11b90|mcaffeine.com 3b2417 c58b4e|dotandkey.com f58f9c f9c6a8|plumgoodness.com 5b2a86 a8559b|
+boat-lifestyle.com e31e25 111111|gonoise.com 111111 4a4a4a|samsung.com 1428a0 0b1560|mi.com ff6900 c45100|oneplus.in eb0028 7a0015|vivo.com 415fff 1f2f8f|oppo.com 046a38 0a8f4f|realme.com ffc915 ffdf6b|croma.com 00b3a4 111111|reliancedigital.in e42529 8f1215|
+lenskart.com 000042 18cfa8|caratlane.com 5b2d8e e36ab6|tanishq.co.in 832729 c9a15b|titaneyeplus.com 00205b 5b7bb4|kalyanjewellers.net a6192e c9a15b|bluestone.com 1c2e5a 6a7fb5|giva.co c4747e f0c4c9|
+zomato.com e23744 9c1c28|swiggy.com fc8019 c85f06|blinkit.com f8cb46 0c831f|zeptonow.com 3c006b ff3269|bigbasket.com 84c225 cc0000|dominos.co.in 006491 e31837|mcdelivery.co.in da291c ffc72c|kfc.co.in e4002b 8c0019|
+groww.in 00b386 5367ff|zerodha.com 387ed1 ff5722|angelone.in 2c2f8f ff6d00|upstox.com 5a2d91 8b5cc7|paytm.com 002e6e 00baf2|phonepe.com 5f259f 8b4fcf|cred.club 111111 3d3d3d|mobikwik.com 0063ff 00a1ff|razorpay.com 072654 3395ff|navi.com 2b1a4e 6c4fb3|
+policybazaar.com 0065ff 00b8ff|bajajfinserv.in 0066b3 00a3e0|godigit.com ffd400 111111|hdfclife.com 004b8d ed1c24|licindia.in 00529b ffcc00|acko.com 582cdb 8f6cf0|
+pw.live 5a4bda 111111|unacademy.com 08bd80 111111|upgrad.com ee3d3d 8f1f1f|byjus.com 813588 b565ba|vedantu.com ff6b1a c44a00|simplilearn.com 1179ef 0b4f9e|allen.in 004a99 e31e24|aakash.ac.in 0f5ca8 00a0e3|scaler.com 0041ca 111111|
+makemytrip.com 0a223d eb2026|goibibo.com 2274e0 ec5b24|ixigo.com ec5b24 0770e3|cleartrip.com ff4f17 1a1a1a|oyorooms.com ee2e24 a31711|goindigo.in 001b94 3a55c4|airindia.com da0e29 f26a21|agoda.com 5542f6 ee2f64|booking.com 003580 009fe3|easemytrip.com 2196f3 ef6c00|redbus.in d84e55 8f2a30|yatra.com e73c33 2d3e50|
+marutisuzuki.com 0b3d91 e30613|tatamotors.com 00488d 4a90d9|mahindra.com dd052b 7a0017|hyundai.com 002c5f 00aad2|kia.com 05141f ea0029|toyotabharat.com eb0a1e 58595b|hondacarindia.com e40521 8a0314|mgmotor.co.in a6192e 222222|heromotocorp.com e31837 111111|tvsmotor.com 25479b e1251b|bajajauto.com 005dab 002f6c|royalenfield.com 9b1b30 111111|olaelectric.com 111111 b4d33b|atherenergy.com 00b274 111111|
+jio.com 0f3cc9 e42529|airtel.in e40000 8f0000|myvi.in ee2737 ffcb05|bsnl.co.in 0d4da1 f58220|actcorp.in e2001a 8a0010|
+nobroker.in fd3752 009587|magicbricks.com d8232a 222222|99acres.com 0078db 00457d|housing.com 5e23dc 00d38d|dlf.in 1d3c6e 7c93bd|godrejproperties.com 00704a 8a1e5c|
+naukri.com 275df5 ff7555|apna.co 1f8268 4a2c5e|indeed.com 2557a7 003a9b|shine.com f28c28 2b3990|internshala.com 008bdc 005a8f|foundit.in 6e00be a64dff|
+1mg.com ff6f61 b8392e|pharmeasy.in 10847e 0b5c58|apollo247.com 02475b fc9916|netmeds.com 32aeb1 84be52|practo.com 28328c 14bef0|thyrocare.com 00a0df 8dc63f|cult.fit ff3278 111111|healthkart.com 00a4a6 f26522|
+urbancompany.com 111111 6e42e5|pepperfry.com f16521 a8420c|wakefit.co 5b2d90 f9a825|ikea.com 0058a3 ffda1a|asianpaints.com 4b2e83 e5352c|livspace.com f26c4f 2d2d2d`
+  .split('|').map(s => { const [d, a, b] = s.trim().split(' '); return [d, ['#' + a, '#' + b]]; }));
+const INDUSTRY_COLOURS = ['#ff6a13','#8cc5e3','#e0457b','#7c5cff','#14a38b','#d99a06','#e5484d','#2f80ed','#8a5cf6','#0ea5a5','#c2410c','#3b82f6','#65a30d','#db2777','#0891b2','#9f6b3f'];
+const industryNames = () => [...new Set(D.companies.map(c => c.industry))].sort();
+const industryColours = name => { const c = INDUSTRY_COLOURS[Math.max(0, industryNames().indexOf(name)) % INDUSTRY_COLOURS.length]; return [c, '#8cc5e3']; };
+const lum = hex => { const n = parseInt(hex.slice(1), 16); const l = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * l(n >> 16) + .7152 * l(n >> 8 & 255) + .0722 * l(n & 255); };
+function themeVars(pair) {
+  const [a, b] = pair;
+  // Pick a bar colour that stays visible on both the dark and light surfaces.
+  const visible = c => lum(c) > .06 && lum(c) < .7;
+  const accent = visible(a) ? a : visible(b) ? b : 'var(--orange)';
+  // Whichever of obsidian or white contrasts more with the main colour.
+  const ink = (lum(a) + .05) / .054 > 1.05 / (lum(a) + .05) ? '#0b0d10' : '#ffffff';
+  return `--brand:${a};--brand2:${b};--ink:${ink};--accent:${accent}`;
+}
+const cLink = c => `<a href="#company/${encodeURIComponent(c.domain)}">${esc(c.name)}</a>`;
+const iLink = n => `<a href="#industry/${encodeURIComponent(n)}">${esc(n)}</a>`;
+const companyBars = (list, get, opts) => bars(list.map(c => ({label: c.name, value: get(c), href: '#company/' + encodeURIComponent(c.domain)})), opts);
+
+// ----- Instagram placement and button intent, from the sampled ads. -----
+const STAGES = [
+  ['Discover', ['LEARN_MORE','WATCH_MORE','SEE_MORE','WATCH_VIDEO','VIEW_INSTAGRAM_PROFILE','VISIT_INSTAGRAM_PROFILE','LIKE_PAGE','FOLLOW_PAGE','LISTEN_NOW','SEE_DETAILS']],
+  ['Sign up or enquire', ['SIGN_UP','APPLY_NOW','GET_QUOTE','CONTACT_US','SUBSCRIBE','MESSAGE_PAGE','WHATSAPP_MESSAGE','SEND_MESSAGE','SEND_WHATSAPP_MESSAGE','CALL_NOW','REGISTER_NOW','GET_ACCESS','INSTAGRAM_MESSAGE']],
+  ['Get the app', ['INSTALL_APP','INSTALL_MOBILE_APP','DOWNLOAD','USE_APP','USE_MOBILE_APP','PLAY_GAME']],
+  ['Buy or book', ['SHOP_NOW','ORDER_NOW','BUY_NOW','BOOK_NOW','BOOK_TRAVEL','GET_OFFER','BUY_TICKETS']]
+];
+const STAGE_NAMES = [...STAGES.map(s => s[0]), 'Other or no button'];
+function stageCounts(buttons) {
+  const out = STAGE_NAMES.map(() => 0);
+  for (const [k, n] of Object.entries(buttons)) { const i = STAGES.findIndex(s => s[1].includes(k)); out[i < 0 ? STAGES.length : i] += n; }
+  return out;
+}
+// Parses docs/meta_samples.csv text (written by scripts/extract_meta_samples.ps1), keyed by Meta page id.
+function parseSamples(text) {
+  const out = {};
+  String(text || '').split(/\r?\n/).forEach(line => {
+    const [id, , sampled, ig, fb, list] = line.replace(/^﻿/, '').split(',');
+    if (!/^\d+$/.test(id) || !(+sampled > 0)) return;
+    const buttons = {};
+    (list || '').split(';').forEach(p => { const i = p.lastIndexOf(':'); if (i > 0) buttons[p.slice(0, i)] = +p.slice(i + 1) || 0; });
+    out[id] = {sampled: +sampled, ig: +ig, fb: +fb, buttons};
+  });
+  return out;
+}
+let SAMPLES = parseSamples(window.ADS_DATA && window.ADS_DATA.metaSamples);
+const sampleOf = c => c.metaPageId ? SAMPLES[c.metaPageId] : undefined;
+function sampleCards(list) {
+  if (!Object.keys(SAMPLES).length) return '';
+  const have = list.filter(sampleOf);
+  if (!have.length) return card('Instagram and funnel', 'No sampled ads for this selection.', '', true);
+  return card('Instagram presence', 'Share of each company\'s sampled active ads that list Instagram. One ad can also run on other placements. Not spend or reach.', companyBars(have, c => sampleOf(c).ig / sampleOf(c).sampled, {color: 'var(--accent, var(--s2))', format: pct, top: Infinity}), have.length > 12)
+    + card('Funnel intent', 'Sampled ads grouped by button. A button shows what the ad asks for, not what people did.', stacked(have.map(c => ({label: c.name, values: stageCounts(sampleOf(c).buttons)})), STAGE_NAMES), true);
+}
+
+// ----- Company and industry pages -----
+function companyPage(c) {
+  const peers = D.companies.filter(x => x.industry === c.industry);
+  const place = get => { if (!has(get(c))) return 'no figure'; const l = peers.map(get).filter(has); return `${l.filter(v => v > get(c)).length + 1} of ${l.length} in ${c.industry}`; };
+  const s = sampleOf(c), f = D.finance.filter(x => x.domain === c.domain);
+  const pair = BRAND[c.domain] || industryColours(c.industry);
+  return `<div class="branded" style="${themeVars(pair)}">
+    <div class="hero"><p>${iLink(c.industry)}</p><h2>${esc(c.name)}</h2><p>${esc(c.domain)}${c.note ? ' · ' + esc(c.note) : ''}</p>
+      <p><a href="${url(mLink(c))}" target="_blank" rel="noopener">Open Meta Ad Library</a> · <a href="${url(gLink(c))}" target="_blank" rel="noopener">Open Google Transparency Center</a> · <a href="#Compare">Compare</a></p></div>
+    <div class="kpis">${kpi('Meta active ads', fmt(c.meta), place(x => x.meta))}${kpi('Google ads, any date', gRange(c.g), place(x => x.g.total))}${kpi('Activity index', has(c.index) ? c.index + '/100' : 'n/a', 'across both platforms')}${s ? kpi('Sampled ads on Instagram', pct(s.ig / s.sampled), `of ${s.sampled} sampled`) : ''}</div>
+    <div class="grid">
+      ${card('Meta: against industry peers', 'Active ads on the main brand page.', companyBars(peers, x => x.meta, {color: 'var(--accent)', top: Infinity}))}
+      ${card('Google: against industry peers', 'All dates, upper end of range.', companyBars(peers, x => x.g.total, {color: 'var(--accent)', top: Infinity}))}
+      ${s ? sampleCards([c]) : ''}
+      ${f.length ? card('Disclosed cost and revenue', 'All advertising media, ₹ crore.', table([{k:'fy', t:'Year', f:v => v}, {k:'spend', t:'Ad cost'}, {k:'revenue', t:'Revenue'}, {k:'src', t:'Source', h:r => `<a href="${url(r.src)}" target="_blank" rel="noopener">link</a>`}], f), true) : ''}
+    </div>
+    <p class="muted">Page colours are approximate and chosen by hand; they are not official brand assets.${BRAND[c.domain] ? '' : ' This company uses its industry colour.'}</p></div>`;
+}
+function industryPage(name) {
+  const list = D.companies.filter(c => c.industry === name);
+  const withMeta = list.filter(c => has(c.meta));
+  return `<div class="branded" style="${themeVars(industryColours(name))}">
+    <div class="hero"><p><a href="#Industries">All industries</a></p><h2>${esc(name)}</h2><p>${list.length} tracked companies</p></div>
+    <div class="kpis">${kpi('Meta active ads', fmt(sum(list.map(c => c.meta))), `${withMeta.length} of ${list.length} companies have a count`)}${kpi('Google ads, upper ends', fmt(sum(list.map(c => c.g.total))), 'all dates')}</div>
+    <div class="grid">
+      ${card('Meta: active ads', 'Click a company for its page.', companyBars(list, c => c.meta, {color: 'var(--accent)', top: Infinity}))}
+      ${card('Google: ads', 'All dates, upper end of range.', companyBars(list, c => c.g.total, {color: 'var(--accent)', top: Infinity}))}
+      ${sampleCards(list)}
+    </div></div>`;
+}
+
+let picks = [];
+function compareView() {
+  if (!picks.length) picks = [...D.companies].filter(c => has(c.meta)).sort((a, b) => b.meta - a.meta).slice(0, 2).map(c => c.domain);
+  const all = [...D.companies].sort((a, b) => a.name.localeCompare(b.name));
+  const select = i => `<select data-pick="${i}" aria-label="Company ${i + 1}"><option value="">Company ${i + 1}</option>${all.map(c => `<option value="${esc(c.domain)}"${picks[i] === c.domain ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select>`;
+  const chosen = [0, 1, 2, 3].map(i => D.companies.find(c => c.domain === picks[i])).filter(Boolean);
+  const line = (label, f) => ({label, cells: chosen.map(f)});
+  const lines = [
+    line('Industry', c => c.industry), line('Meta active ads', c => fmt(c.meta)), line('Google ads, any date', c => gRange(c.g)),
+    line('Activity index', c => fmt(c.index))
+  ];
+  if (Object.keys(SAMPLES).length) lines.push(
+    line('Sampled ads on Instagram', c => { const s = sampleOf(c); return s ? pct(s.ig / s.sampled) : 'n/a'; }),
+    line('Most common button', c => { const s = sampleOf(c); if (!s) return 'n/a'; const n = stageCounts(s.buttons); return STAGE_NAMES[n.indexOf(Math.max(...n))]; }));
+  return `<div class="grid"><section class="card wide"><h2>Compare side by side</h2><p class="muted">Pick up to four companies. The filters do not apply here.</p>
+    <div class="picks">${[0, 1, 2, 3].map(select).join('')}</div>
+    ${table([{k:'label', t:'Measure', f:v => v}, ...chosen.map((c, i) => ({k:'c' + i, t:c.name, h:r => esc(r.cells[i])}))], lines)}</section>
+    ${card('Meta: active ads', '', companyBars(chosen, c => c.meta, {color: 'var(--s2)'}))}
+    ${card('Google: ads', '', companyBars(chosen, c => c.g.total))}
+    ${sampleCards(chosen)}</div>`;
+}
+
+function bars(items, {color = 'var(--s1)', format = fmt, top = 15} = {}) {
+  const list = items.filter(i => has(i.value)).sort((a, b) => b.value - a.value).slice(0, top);
+  if (!list.length) return '<p class="muted">No data for this filter.</p>';
+  const max = Math.max(...list.map(i => i.value)) || 1;
+  return list.map(i => `<div class="bar" title="${esc(i.label)}: ${esc(format(i.value))}"><span>${i.href ? `<a href="${esc(i.href)}">${esc(i.label)}</a>` : esc(i.label)}</span><div class="track"><div class="fill" style="width:${i.value / max * 100}%;background:${color}"></div></div><span>${esc(format(i.value))}</span></div>`).join('');
+}
+const SERIES = ['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--muted)'];
+const legend = names => `<div class="legend">${names.map((n, i) => `<span><i style="background:${SERIES[i]}"></i>${esc(n)}</span>`).join('')}</div>`;
+function stacked(items, names) {
+  const list = items.filter(i => sum(i.values) > 0);
+  if (!list.length) return '<p class="muted">No format data for this filter.</p>';
+  return legend(names) + list.map(i => {
+    const t = sum(i.values);
+    const tip = names.map((n, k) => `${n} ${pct(i.values[k] / t)}`).join(', ');
+    return `<div class="bar" title="${esc(i.label + ': ' + tip)}"><span>${esc(i.label)}</span><div class="track">${i.values.map((v, k) => v ? `<div class="fill" style="width:${v / t * 100}%;background:${SERIES[k]}"></div>` : '').join('')}</div><span class="muted">${esc(names[i.values.indexOf(Math.max(...i.values))])}</span></div>`;
+  }).join('');
+}
+function table(cols, data) {
+  return `<div class="scroll"><table><thead><tr>${cols.map(c => `<th data-k="${c.k}" class="${c.l ? 'l' : ''}">${esc(c.t)}</th>`).join('')}</tr></thead><tbody>${data.map(r => `<tr>${cols.map(c => `<td class="${c.l ? 'l' : ''}">${c.h ? c.h(r) : esc((c.f || fmt)(r[c.k]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+const card = (title, sub, body, wide) => `<section class="card${wide ? ' wide' : ''}"><h2>${esc(title)}</h2><p class="muted">${esc(sub)}</p>${body}</section>`;
+const kpi = (label, value, sub) => `<div class="card kpi"><span class="muted">${esc(label)}</span><b>${esc(value)}</b><span class="muted">${esc(sub)}</span></div>`;
+
+function industries() {
+  const m = {};
+  rows().forEach(c => {
+    const x = m[c.industry] ||= {industry: c.industry, n: 0, google: 0, gn: 0, meta: 0, mn: 0, formats: [0,0,0], gv: [], mv: []};
+    x.n++;
+    if (has(c.g.total)) { x.google += c.g.total; x.gn++; x.gv.push({name: c.name, v: c.g.total}); }
+    if (has(c.meta)) { x.meta += c.meta; x.mn++; x.mv.push({name: c.name, v: c.meta}); }
+    if ([c.g.text, c.g.image, c.g.video].every(has)) [c.g.text, c.g.image, c.g.video].forEach((v, i) => x.formats[i] += v);
+  });
+  const median = l => { if (!l.length) return null; const s = l.map(i => i.v).sort((a, b) => a - b), h = s.length >> 1; return s.length % 2 ? s[h] : Math.round((s[h - 1] + s[h]) / 2); };
+  const leader = l => l.length ? [...l].sort((a, b) => b.v - a.v)[0] : null;
+  return Object.values(m).map(x => {
+    const g = leader(x.gv), mt = leader(x.mv);
+    return {...x, gMedian: median(x.gv), mMedian: median(x.mv),
+      gTop: g ? `${g.name} (${fmt(g.v)})` : 'n/a', mTop: mt ? `${mt.name} (${fmt(mt.v)})` : 'n/a',
+      gShare: g && x.google ? g.v / x.google : null, mShare: mt && x.meta ? mt.v / x.meta : null};
+  });
+}
+const gRange = g => !has(g.total) ? 'n/a' : has(g.low) && g.low !== g.total ? `${fmt(g.low)}–${fmt(g.total)}` : fmt(g.total);
+const finance = () => {
+  const names = new Set(rows().map(c => c.domain));
+  const filtered = $('#industry').value || $('#q').value.trim();
+  return D.finance.filter(f => !filtered || names.has(f.domain)).map(f => ({...f,
+    intensity: f.revenue ? f.spend / f.revenue : null,
+    perRupee: f.revenue ? f.revenue / f.spend : null,
+    growth: f.prevSpend ? f.spend / f.prevSpend - 1 : null,
+    label: `${f.company} ${f.fy}`}));
+};
+const gLink = c => `https://adstransparency.google.com/?region=IN&domain=${encodeURIComponent(c.domain)}`;
+const mLink = c => c.metaPageId ? `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IN&view_all_page_id=${encodeURIComponent(c.metaPageId)}` : `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IN&q=${encodeURIComponent(c.name)}`;
+
+const VIEWS = {
+  'Overview'() {
+    const r = rows();
+    const best = (k) => [...r].filter(c => has(k(c))).sort((a, b) => k(b) - k(a))[0];
+    const g = best(c => c.g.total), m = best(c => c.meta), i = best(c => c.index);
+    const f = finance().sort((a, b) => b.spend - a.spend)[0];
+    const counted = r.filter(c => has(c.meta));
+    return `<div class="chips">${industryNames().map(n => `<a class="chip" href="#industry/${encodeURIComponent(n)}">${esc(n)}</a>`).join('')}</div>
+    <div class="kpis">
+      ${kpi('Meta active ads tracked', fmt(sum(counted.map(c => c.meta))), 'Instagram, Facebook and other Meta placements')}
+      ${kpi('Brands with a Meta count', fmt(counted.length), 'of ' + fmt(r.length) + ' shown')}
+      ${kpi('Most ads on Google', g ? g.name : 'n/a', g ? gRange(g.g) + ' ads, any date' : '')}
+      ${kpi('Most active ads on Meta', m ? m.name : 'n/a', m ? fmt(m.meta) + ' active ads' : '')}
+      ${kpi('Highest on both platforms', i ? i.name : 'n/a', i ? 'activity index ' + i.index + '/100' : '')}
+      ${kpi('Largest disclosed ad cost', f ? f.company : 'n/a', f ? cr(f.spend) + ' in ' + f.fy : '')}
+      ${kpi('India digital ad market', cr(D.market.digital), D.market.year + ', ' + pct(D.market.digital / D.market.total) + ' of all advertising')}
+    </div>
+    <div class="grid">
+      ${card('Google: ads by company', 'India region, all dates, upper end of the range. Counts every account linking to the website.', companyBars(r, c => c.g.total))}
+      ${card('Meta: active ads by company', 'Ads running in India on the snapshot date across Instagram, Facebook and other Meta placements, main brand page. Click a name for its page.', companyBars(r, c => c.meta, {color: 'var(--s2)'}))}
+      ${card('What stands out', 'Computed from the tracked sample, not the whole market.', insights(), true)}
+    </div>`;
+  },
+  'Companies'() {
+    const data = [...rows()].sort((a, b) => {
+      const get = c => sortKey.startsWith('g.') ? c.g[sortKey.slice(2)] : c[sortKey];
+      const x = get(a), y = get(b);
+      if (!has(x)) return 1; if (!has(y)) return -1;
+      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * sortDir;
+    }).map(c => ({...c, gt: c.g.total, gtx: c.g.text, gim: c.g.image, gvi: c.g.video, g30: c.g.last30}));
+    return `<div class="grid">${card('Company leaderboard', 'Click a heading to sort. n/a means not captured, which is different from zero. Open links to check live figures.', table([
+      {k:'name', t:'Company', l:1, h:r => cLink(r)}, {k:'industry', t:'Industry', l:1, h:r => iLink(r.industry)},
+      {k:'index', t:'Activity index'}, {k:'g.total', t:'Google ads', h:r => esc(gRange(r.g))},
+      {k:'g.text', t:'Text', h:r => esc(fmt(r.gtx))}, {k:'g.image', t:'Image', h:r => esc(fmt(r.gim))}, {k:'g.video', t:'Video', h:r => esc(fmt(r.gvi))},
+      {k:'g.last30', t:'Google, 30 days', h:r => esc(fmt(r.g30))}, {k:'meta', t:'Meta active'},
+      {k:'live', t:'Check live', h:r => `<a href="${url(gLink(r))}" target="_blank" rel="noopener">Google</a> · <a href="${url(mLink(r))}" target="_blank" rel="noopener">Meta</a>`},
+      {k:'note', t:'Note', l:1, f:v => v || ''}
+    ], data), true)}</div>`;
+  },
+  'Industries'() {
+    const ind = industries();
+    return `<div class="chips">${industryNames().map(n => `<a class="chip" href="#industry/${encodeURIComponent(n)}">${esc(n)}</a>`).join('')}</div>
+    <div class="grid">
+      ${card('Google ads by industry','Sum of tracked companies, upper end of each range.', bars(ind.filter(i => i.gn).map(i => ({label: i.industry, value: i.google})), {top: Infinity}))}
+      ${card('Meta active ads by industry', 'Sum of tracked companies with a Meta count.', bars(ind.filter(i => i.mn).map(i => ({label: i.industry, value: i.meta})), {color: 'var(--s2)', top: Infinity}))}
+      ${card('Typical company on Google', 'Median per industry. Less distorted by one very large advertiser.', bars(ind.map(i => ({label: i.industry, value: i.gMedian})), {top: Infinity}))}
+      ${card('Typical company on Meta', 'Median active ads per industry.', bars(ind.map(i => ({label: i.industry, value: i.mMedian})), {color: 'var(--s2)', top: Infinity}))}
+      ${card('Leader in each industry', 'Leader share is that company\'s part of the industry total in this sample.', table([
+        {k:'industry', t:'Industry', f:v => v}, {k:'gTop', t:'Google leader', l:1, f:v => v}, {k:'gShare', t:'Share', f:pct}, {k:'mTop', t:'Meta leader', l:1, f:v => v}, {k:'mShare', t:'Share', f:pct}
+      ], [...ind].sort((a, b) => a.industry.localeCompare(b.industry))), true)}
+      ${card('Industry detail', 'Coverage shows how many tracked companies had data, so compare industries with care.', table([
+        {k:'industry', t:'Industry', f:v => v}, {k:'n', t:'Companies'}, {k:'google', t:'Google ads'}, {k:'gn', t:'Google coverage'}, {k:'meta', t:'Meta active'}, {k:'mn', t:'Meta coverage'}
+      ], ind.sort((a, b) => b.meta - a.meta)), true)}
+      ${D.fmcg ? card('FMCG: separate, partial view', 'Google: one advertiser account of the company (for Nestle, the largest of 5), any date; ads run by agencies are not counted. Meta: active ads on one flagship brand page, not the whole company. n/a means nothing was found, not zero. Not comparable with the figures above, so not in any total or ranking. Not affected by the filters.', table([
+        {k:'company', t:'Company', f:v => v},
+        {k:'google', t:'Google account ads', h:r => r.account ? `<a href="${url('https://adstransparency.google.com/advertiser/' + r.account + '?region=IN')}" target="_blank" rel="noopener">${esc(r.google)}</a>` : 'n/a'},
+        {k:'page', t:'Meta page checked', l:1, f:v => v},
+        {k:'meta', t:'Meta active', h:r => r.pageId ? `<a href="${url(mLink({metaPageId: r.pageId}))}" target="_blank" rel="noopener">${esc(fmt(r.meta))}</a>` : 'n/a'}
+      ], D.fmcg), true) : ''}
+    </div>`;
+  },
+  'Compare'() { return compareView(); },
+  'Instagram & funnel'() {
+    const list = rows().filter(sampleOf).sort((a, b) => b.meta - a.meta);
+    const shown = $('#industry').value || $('#q').value.trim() ? list : list.slice(0, 25);
+    return `<div class="note">Built from a sample: the first batch of ads returned for each brand page, not all of its ads. ${list.length} companies have a sample${shown.length < list.length ? '; the 25 with the most active ads are shown (filter to see others)' : ''}. Spend, revenue, clicks and sales are not public.</div>
+    <div class="grid">${sampleCards(shown.length ? shown : rows())}</div>`;
+  },
+  'Ad types'() {
+    const full = rows().filter(c => [c.g.text, c.g.image, c.g.video].every(has));
+    const ind = industries();
+    return `<div class="grid">
+      ${card('Google format mix by company', `Share of text, image and video creatives. ${full.length} companies had all three counts.`, stacked(full.map(c => ({label: c.name, values: [c.g.text, c.g.image, c.g.video]})), ['Text','Image','Video']), true)}
+      ${card('Google format mix by industry', 'Same companies, summed by industry.', stacked(ind.map(i => ({label: i.industry, values: i.formats})), ['Text','Image','Video']), true)}
+      ${card('Meta creative formats', D.metaCreative.note, bars(D.metaCreative.formats, {color: 'var(--s2)'}))}
+      ${card('Meta call-to-action buttons', 'What the same sample asks people to do. Shows campaign objective: sales, installs or leads.', bars(D.metaCreative.ctas, {color: 'var(--s2)'}))}
+      ${card('Whole market: digital spend by format, ' + D.market.year, 'Share of digital advertising spend, as reported from the dentsu-e4m report.', bars(D.market.formats, {color: 'var(--s3)', format: v => v + '%'}), true)}
+    </div>`;
+  },
+  'Cost & revenue'() {
+    const f = finance();
+    return `<div class="note"><b>Read this first.</b> No company or platform publishes the revenue produced by its ads. The figures below are total company revenue beside total advertising expense (all media, not only digital). "Revenue per ₹1 of ad cost" is a ratio, not return on ad spend.</div>
+    <div class="grid">
+      ${card('Ad cost', 'Disclosed advertising and promotion expense, ₹ crore.', bars(f.map(x => ({label: x.label, value: x.spend})), {top: 20}))}
+      ${card('Company revenue', 'Same companies and years, ₹ crore.', bars(f.map(x => ({label: x.label, value: x.revenue})), {color: 'var(--s3)', top: 20}))}
+      ${card('Ad intensity', 'Ad cost as a share of revenue. Higher means growth leans more on advertising.', bars(f.map(x => ({label: x.label, value: x.intensity})), {color: 'var(--s2)', format: pct, top: 20}))}
+      ${card('Revenue per ₹1 of ad cost', 'Efficiency ratio, not attributed revenue.', bars(f.map(x => ({label: x.label, value: x.perRupee})), {color: 'var(--s3)', format: v => '₹' + v.toFixed(1), top: 20}))}
+      ${card('Detail with sources', 'Definitions differ by company, so treat close values as ties.', table([
+        {k:'company', t:'Company', f:v => v}, {k:'fy', t:'Year', f:v => v}, {k:'spend', t:'Ad cost (cr)'}, {k:'growth', t:'Change on year', f:v => has(v) ? pct(v) : 'n/a'}, {k:'revenue', t:'Revenue (cr)'}, {k:'intensity', t:'Ad / revenue', f:pct},
+        {k:'note', t:'Note', l:1, f:v => v || ''}, {k:'src', t:'Source', l:1, h:r => `<a href="${url(r.src)}" target="_blank" rel="noopener">link</a>`}
+      ], f.sort((a, b) => b.spend - a.spend)), true)}
+      ${card('Revenue earned from ads: platforms', 'Gross advertising revenue in India. Not affected by the filters.', bars(D.platforms.map(p => ({label: p.name, value: p.value})), {format: cr}) + D.platforms.map(p => `<p class="muted">${esc(p.name)}: ${esc(p.note)} <a href="${url(p.src)}" target="_blank" rel="noopener">source</a></p>`).join(''))}
+      ${card('Revenue earned from ads: shopping apps', 'Retail media: brands pay these apps to be seen.', bars(D.retailMedia.map(p => ({label: p.name, value: p.value})), {color: 'var(--s3)', format: cr}) + D.retailMedia.map(p => `<p class="muted">${esc(p.name)}: ${esc(p.note)} <a href="${url(p.src)}" target="_blank" rel="noopener">source</a></p>`).join(''))}
+    </div>`;
+  },
+  'Political ads'() {
+    const p = D.political;
+    const names = p.top.map(t => ({label: t[0], value: t[1] * p.totalCr}));
+    return `<div class="note">Political, election and issue ads are the one category where Google publishes real spend. Covers Google and YouTube only, cumulative from February 2019. The industry filter does not apply.</div>
+    <div class="kpis">${kpi('Total spend', cr(Math.round(p.totalCr)), 'since Feb 2019')}${kpi('Ads', fmt(p.ads), 'published')}${kpi('Top advertiser', p.top[0][0], pct(p.top[0][1]) + ' of spend')}${kpi('Top 10 share', pct(sum(p.top.slice(0, 10).map(t => t[1]))), 'of all spend')}</div>
+    <div class="grid">
+      ${card('Top 25 advertisers by spend', 'Estimated from Google\'s published spend share times total.', bars(names.filter(n => n.label.toLowerCase().includes($('#q').value.trim().toLowerCase())), {top: 25, format: v => '₹' + v.toFixed(1) + ' cr'}), true)}
+      ${card('Share of spend by format', 'Where the money goes.', bars(p.formats.map(f => ({label: f[0], value: f[1]})), {format: pct}))}
+      ${card('Share of ad count by format', 'What gets produced most.', bars(p.formats.map(f => ({label: f[0], value: f[2]})), {color: 'var(--s2)', format: pct}))}
+    </div>`;
+  },
+  'ROAS lab'() {
+    const fields = [['budget','Ad budget (₹)',100000],['cpm','Cost per 1,000 views (₹)',100],['ctr','Click-through rate (%)',1],['cvr','Conversion rate (%)',2],['aov','Average order value (₹)',1200],['margin','Gross margin (%)',40]];
+    return `<div class="grid"><section class="card wide"><h2>What would an ad budget return?</h2>
+      <div class="note">A scenario model. The starting values are placeholders to edit, not measurements of any company or platform.</div>
+      <div class="calc">${fields.map(f => `<label>${f[1]}<input type="number" min="0" step="any" id="c_${f[0]}" value="${f[2]}"></label>`).join('')}</div>
+      <div class="kpis" id="calcOut"></div>
+      <p class="muted">Views = budget ÷ CPM × 1,000. Clicks = views × CTR. Orders = clicks × conversion rate. Revenue = orders × order value. ROAS = revenue ÷ budget. Break-even ROAS = 1 ÷ margin.</p></section></div>`;
+  },
+  'Method & sources'() {
+    return `<div class="grid">${card('How the data was collected', 'Snapshot ' + D.meta.snapshot, '<ul>' + D.meta.method.map(m => `<li>${esc(m)}</li>`).join('') + '</ul>', true)}
+      ${card('Limits', 'What this dashboard cannot tell you.', '<ul>' + D.meta.limits.map(m => `<li>${esc(m)}</li>`).join('') + '</ul>', true)}
+      ${card('Sources', 'Links to check every figure.', '<ul>' + D.sources.map(s => `<li><a href="${url(s[1])}" target="_blank" rel="noopener">${esc(s[0])}</a></li>`).join('') + '</ul>', true)}</div>`;
+  }
+};
+
+function insights() {
+  const r = rows(), out = [], ind = industries();
+  const gAll = sum(r.map(c => c.g.total));
+  const top = [...r].filter(c => has(c.g.total)).sort((a, b) => b.g.total - a.g.total).slice(0, 3);
+  if (top.length === 3 && gAll) out.push(`${top.map(c => c.name).join(', ')} hold ${pct(sum(top.map(c => c.g.total)) / gAll)} of the Google ads counted here.`);
+  const mi = [...ind].sort((a, b) => b.meta - a.meta)[0];
+  if (mi && mi.meta) out.push(`${mi.industry} has the most active Meta ads in total (${fmt(mi.meta)}, from ${mi.mn} of ${mi.n} companies).`);
+  const med = [...ind].filter(i => has(i.mMedian)).sort((a, b) => b.mMedian - a.mMedian)[0];
+  if (med && ind.length > 1) out.push(`The typical (median) company with a Meta count runs most ads in ${med.industry} (${fmt(med.mMedian)}).`);
+  const lead = [...ind].filter(i => i.gn > 2 && has(i.gShare)).sort((a, b) => b.gShare - a.gShare)[0];
+  if (lead && ind.length > 1) out.push(`Most concentrated on Google: ${lead.industry}, where ${lead.gTop.replace(/ \(.*\)$/, '')} accounts for ${pct(lead.gShare)} of the industry's counted ads.`);
+  const both = r.filter(c => has(c.meta) && has(c.g.last30) && c.meta > 0);
+  const social = both.filter(c => c.meta > c.g.last30);
+  if (both.length) out.push(`${social.length} of ${both.length} companies with both figures show more active Meta ads than Google ads from the last 30 days. The two measures differ, so read this as a lean, not an exact comparison.`);
+  const f = finance().filter(x => has(x.intensity)).sort((a, b) => b.intensity - a.intensity);
+  if (f.length > 1) out.push(`${f[0].company} spends the largest share of revenue on advertising (${pct(f[0].intensity)}, ${f[0].fy}); ${f[f.length - 1].company} the smallest (${pct(f[f.length - 1].intensity)}, ${f[f.length - 1].fy}).`);
+  const gr = finance().filter(x => has(x.growth)).sort((a, b) => b.growth - a.growth)[0];
+  if (gr) out.push(`Fastest rise in disclosed ad cost: ${gr.company}, up ${pct(gr.growth)} in ${gr.fy}.`);
+  return '<ul>' + out.map(o => `<li>${esc(o)}</li>`).join('') + '</ul>';
+}
+
+function calc() {
+  const v = k => Math.max(0, Number($('#c_' + k).value) || 0);
+  const views = v('cpm') ? v('budget') / v('cpm') * 1000 : 0;
+  const clicks = views * v('ctr') / 100, orders = clicks * v('cvr') / 100, rev = orders * v('aov');
+  const roas = v('budget') ? rev / v('budget') : 0, even = v('margin') ? 100 / v('margin') : 0;
+  const profit = rev * v('margin') / 100 - v('budget');
+  const money = n => '₹' + Math.round(n).toLocaleString('en-IN');
+  $('#calcOut').innerHTML = kpi('Views', Math.round(views).toLocaleString('en-IN'), '') + kpi('Clicks', Math.round(clicks).toLocaleString('en-IN'), orders && clicks ? money(v('budget') / clicks) + ' per click' : '') + kpi('Orders', Math.round(orders).toLocaleString('en-IN'), orders ? money(v('budget') / orders) + ' cost per order' : '') + kpi('Revenue from ads', money(rev), 'modelled') + kpi('ROAS', roas.toFixed(2) + 'x', even ? 'break-even ' + even.toFixed(2) + 'x' : '') + kpi(profit >= 0 ? 'Profit after ad cost' : 'Loss after ad cost', money(Math.abs(profit)), 'before other costs');
+}
+
+function render() {
+  if (!D) { $('#view').innerHTML = '<p>The data block inside this file did not load. Open the browser console to see the error.</p>'; return; }
+  if (tab === 'Instagram & funnel' && !Object.keys(SAMPLES).length) tab = 'Overview';
+  $('#tabs').innerHTML = shownTabs().map(t => `<button role="tab" aria-selected="${t === tab}" data-tab="${esc(t)}">${esc(t)}</button>`).join('');
+  const [kind, key] = [tab.split('/')[0], tab.slice(tab.indexOf('/') + 1)];
+  const company = kind === 'company' && D.companies.find(c => c.domain === key);
+  const industry = kind === 'industry' && industryNames().includes(key);
+  $('.filters').style.display = company || industry || tab === 'Compare' ? 'none' : '';
+  $('#view').innerHTML = company ? companyPage(company) : industry ? industryPage(key) : (VIEWS[tab] || VIEWS.Overview)();
+  $('#count').textContent = `${rows().length} of ${D.companies.length} tracked companies`;
+  const age = Math.floor((Date.now() - new Date(D.meta.snapshot)) / 864e5);
+  $('#stamp').textContent = `Data snapshot ${D.meta.snapshot}${age > 30 ? ` (${age} days old: refresh it)` : ''}.`;
+  if (tab === 'ROAS lab') calc();
+}
+function init() {
+  enrich();
+  const keep = $('#industry').value;
+  $('#industry').innerHTML = '<option value="">All industries</option>' + [...new Set(D.companies.map(c => c.industry))].sort().map(i => `<option>${esc(i)}</option>`).join('');
+  $('#industry').value = keep;
+  render();
+}
+$('#tabs').onclick = e => { const t = e.target.dataset.tab; if (t) { tab = t; history.replaceState(null, '', '#' + encodeURIComponent(t)); render(); } };
+window.addEventListener('hashchange', () => { tab = readHash(); render(); window.scrollTo(0, 0); });
+window.addEventListener('popstate', () => { tab = readHash(); render(); });
+// Handle in-page links in script, so they also work where the page is hosted inside a frame.
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href^="#"]');
+  if (!a) return;
+  e.preventDefault();
+  const h = decodeURIComponent(a.getAttribute('href').slice(1));
+  try { history.pushState(null, '', '#' + encodeURIComponent(h)); } catch (err) {}
+  tab = h; render(); window.scrollTo(0, 0);
+});
+// A framed host blocks downloads started by the page, so do not offer one there.
+if (window.self !== window.top) $('#csv').hidden = true;
+// Messages show in the page, because some hosts never display alert boxes.
+const say = text => { $('#count').textContent = text; $('.filters').style.display = ''; };
+$('#view').onchange = e => { const i = e.target.dataset.pick; if (i !== undefined) { picks[+i] = e.target.value; render(); } };
+$('#view').onclick = e => { const th = e.target.closest('th'); if (tab !== 'Companies' || !th || th.dataset.k === 'live') return; const k = th.dataset.k; sortDir = sortKey === k ? -sortDir : (k === 'name' || k === 'industry' ? 1 : -1); sortKey = k; render(); };
+$('#view').oninput = e => { if (e.target.id.startsWith('c_')) calc(); };
+$('#industry').onchange = render;
+$('#q').oninput = render;
+$('#theme').onclick = () => { const d = document.documentElement; d.dataset.theme = d.dataset.theme === 'light' ? 'dark' : 'light'; };
+$('#importBtn').onclick = () => $('#import').click();
+// Turns saved Meta lookup results (.txt) into the same CSV that parseSamples reads. Other files are skipped.
+function samplesFromResults(texts) {
+  const pages = {};
+  for (const text of texts) {
+    let calls;
+    try { calls = JSON.parse(text.replace(/^﻿/, '')).data.alexandria; } catch (e) { continue; }
+    if (!Array.isArray(calls)) continue;
+    for (const call of calls) {
+      if (call.capability !== 'meta-ads/library/advertiser' || !call.data || !call.data.results) continue;
+      const ads = call.data.results.flat();
+      if (!ads.length) continue;
+      const on = p => ads.filter(a => (a.publisher_platform || []).includes(p)).length;
+      const buttons = {};
+      ads.forEach(a => { const k = String((a.snapshot && a.snapshot.cta_type) || 'NONE').replace(/[,;:\s]/g, '_'); buttons[k] = (buttons[k] || 0) + 1; });
+      // A page looked up twice is counted once: the later file wins.
+      pages[call.data.page_id] = [call.data.page_id, call.data.number_of_ads, ads.length, on('INSTAGRAM'), on('FACEBOOK'), Object.entries(buttons).map(([k, n]) => k + ':' + n).join(';')].join(',');
+    }
+  }
+  const lines = Object.values(pages);
+  return {count: lines.length, csv: ['page_id,active_ads,sampled,on_instagram,on_facebook,buttons', ...lines].join('\n')};
+}
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type: 'text/csv'}));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+$('#import').onchange = async e => {
+  try {
+    const files = [...e.target.files].sort((a, b) => a.name.localeCompare(b.name));
+    if (!files.length) return;
+    if (files.length > 1 || /\.txt$/i.test(files[0].name)) {
+      const made = samplesFromResults(await Promise.all(files.map(f => f.text())));
+      if (!made.count) throw new Error('no Meta ad results found in the selected files');
+      SAMPLES = parseSamples(made.csv);
+      tab = 'Instagram & funnel';
+      history.replaceState(null, '', '#' + encodeURIComponent(tab));
+      init();
+      download('meta_samples.csv', made.csv);
+      say(`Read ${made.count} brand pages. A summary file, meta_samples.csv, was offered for download.`);
+      e.target.value = '';
+      return;
+    }
+    const text = await files[0].text();
+    if (/^﻿?page_id,/.test(text)) { SAMPLES = parseSamples(text); init(); e.target.value = ''; return; }
+    const next = JSON.parse(text);
+    // Accepts a full dataset, or the output of scripts/collect_google_console.js.
+    if (next.google && next.snapshot) { D.companies.forEach(c => { const g = next.google[c.domain]; if (g) for (const k in g) if (Number.isFinite(g[k])) { c.g[k] = g[k]; if (k === 'total') delete c.g.low; } }); D.meta.snapshot = next.snapshot; }
+    else if (Array.isArray(next.companies) && next.meta) D = next;
+    else throw new Error('unrecognised file');
+    init();
+  } catch (err) { say('Could not load that file: ' + err.message); }
+  e.target.value = '';
+};
+$('#csv').onclick = () => {
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const head = ['company','domain','industry','google_ads_low','google_ads','google_text','google_image','google_video','google_last30','meta_active','activity_index','note'];
+  const body = rows().map(c => [c.name, c.domain, c.industry, c.g.low, c.g.total, c.g.text, c.g.image, c.g.video, c.g.last30, c.meta, c.index, c.note].map(q).join(','));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([[head.join(','), ...body].join('\n')], {type: 'text/csv'}));
+  a.download = 'india_digital_ads.csv'; a.click(); URL.revokeObjectURL(a.href);
+};
+if (D) init(); else render();
+</script>
+</body>
+</html>
