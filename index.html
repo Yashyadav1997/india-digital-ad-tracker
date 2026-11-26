@@ -119,7 +119,7 @@ Westside|westside.com|Fashion|66|109777759066882|100|200
 Max Fashion|maxfashion.in|Fashion|||1000|2000
 Pantaloons|pantaloons.com|Fashion|825|102287061026|900|1000
 Savana|savana.com|Fashion|||400|500
-Nykaa|nykaa.com|Beauty & Personal Care|3963||10000|20000
+Nykaa|nykaa.com|Beauty & Personal Care|3963|290603811040262|10000|20000
 Mamaearth|mamaearth.in|Beauty & Personal Care|902|619181354927737|700|800
 SUGAR Cosmetics|sugarcosmetics.com|Beauty & Personal Care|490|100116710332265|100|200
 Purplle|purplle.com|Beauty & Personal Care|3538|275468419167761|6000|7000
@@ -503,7 +503,7 @@ function stageCounts(buttons) {
   for (const [k, n] of Object.entries(buttons)) { const i = STAGES.findIndex(s => s[1].includes(k)); out[i < 0 ? STAGES.length : i] += n; }
   return out;
 }
-// Parses docs/meta_samples.csv text (written by scripts/extract_meta_samples.ps1), keyed by Meta page id.
+// Parses meta_samples.csv text (one row per brand page), keyed by Meta page id.
 function parseSamples(text) {
   const out = {};
   String(text || '').split(/\r?\n/).forEach(line => {
@@ -889,7 +889,7 @@ $('#csv').onclick = () => {
   a.href = URL.createObjectURL(new Blob([[head.join(','), ...body].join('\n')], {type: 'text/csv'}));
   a.download = 'india_digital_ads.csv'; a.click(); URL.revokeObjectURL(a.href);
 };
-if (D) init(); else render();
+if (D) init(); else render(); if (D && !Object.keys(SAMPLES).length) fetch('meta_samples.csv').then(r => r.ok ? r.text() : '').then(text => { const found = parseSamples(text); if (Object.keys(SAMPLES).length || !Object.keys(found).length) return; SAMPLES = found; tab = readHash(); init(); }).catch(() => {});
 </script>
 </body>
 </html>
