@@ -4,7 +4,7 @@ Who advertises most on Google and Meta in India, in which industries, with which
 
 **Live dashboard:** https://yashyadav1997.github.io/india-digital-ad-tracker/
 
-Open [index.html](index.html) in any browser. It is a single file: no server, build step, library or API key. The only outside request is the Figtree font from Google Fonts; offline it falls back to a system font. Instagram Sans is used only if it is already installed.
+Open [index.html](index.html) in any browser: no server, build step, library or API key. The only outside request is the Figtree font from Google Fonts; offline it falls back to a system font. Instagram Sans is used only if it is already installed. The Instagram view reads `meta_samples.csv` from the same folder, which browsers allow on the live site but not for a page opened from disk; there, choose **Load newer data** and pick that file.
 
 **Data snapshot: 26 November 2026.** The page does not update itself.
 
@@ -17,7 +17,7 @@ Open [index.html](index.html) in any browser. It is a single file: no server, bu
 | Industries | Ad counts summed by industry, with coverage |
 | Company and industry pages | Click any name; each page takes an approximate brand or industry colour |
 | Compare | Up to four companies side by side |
-| Instagram & funnel | Instagram placement share and button intent from sampled ads (needs the sample file below) |
+| Instagram & funnel | Instagram placement share and button intent from sampled ads (from `meta_samples.csv`) |
 | Ad types | Google text, image and video mix; Meta creative formats and buttons |
 | Cost & revenue | Disclosed ad expense beside company revenue; platform and retail-media ad revenue |
 | Political ads | Google's published political ad spend |
@@ -68,7 +68,7 @@ The script has not been run end to end in its current form, and its website list
 
 **Instagram and button samples**
 
-Choose **Load newer data** and select all the saved Meta lookup result files (`.txt`) together. The page summarises them, shows the Instagram view and downloads `meta_samples.csv`, which can be loaded again later. `scripts/extract_meta_samples.ps1` does the same from a terminal where scripts are allowed; it has not been run. The raw lookup results are not part of this repository.
+`meta_samples.csv` holds one row per brand page: ads sampled, how many list Instagram or Facebook, and which buttons they use. To rebuild it, choose **Load newer data** and select all the saved Meta lookup result files (`.txt`) together; the page summarises them and downloads a new file. `scripts/extract_meta_samples.ps1` does the same from a terminal where scripts are allowed; it has not been run. The raw lookup results are not part of this repository.
 
 **Meta counts, finances and other figures** are updated by editing the data block in `index.html` (search for `DATA SNAPSHOT`).
 
@@ -78,6 +78,7 @@ Review Google's and Meta's terms before collecting data regularly or using it co
 
 ```
 index.html                         dashboard and data snapshot
+meta_samples.csv                   Instagram and button samples
 scripts/collect_google_console.js  Google refresh script
 scripts/extract_meta_samples.ps1   Instagram and button sample summary
 ```
